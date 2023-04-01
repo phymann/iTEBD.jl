@@ -1,4 +1,4 @@
-function canonQ(Γ, λ, α, β; showQ = false)
+function canonQ(Γ, λ; showQ = false)
     #=
      contruct R matrix
                  ------
@@ -13,6 +13,10 @@ function canonQ(Γ, λ, α, β; showQ = false)
                     |
               -α'-[Γ*-λ*]-β-
      =#
+
+     α = commonind(Γ, Γ, tags="left, bond")
+     β = commonind(Γ, Γ, tags="right, bond")
+     torf = true
      ε = 1E-8
      R_tmp = prime(Γ, β) * replaceind(λ, α, β')         # i, α, β
      R_tmp1 = dag(replaceinds(R_tmp, [α, β], [α', β'])) # i, α', β'
@@ -20,19 +24,25 @@ function canonQ(Γ, λ, α, β; showQ = false)
   
      # check whether iMPS is right canonical
      R1 = R * delta(β, β')
+
      R1mat = array(R1, α, α')
      R1mat0 = Diagonal([R1mat[1,1] for _ in 1:size(R1mat)[1]])
-     if showQ
+
       if norm(R1mat - R1mat0) > ε
-         println("--------------------------------")
-         println("η*Id is NOT R's right eigenvector!")
-         @pt R1mat
+         torf = false
+         if showQ
+            println("--------------------------------")
+            println("Id is NOT R's right eigenvector!")
+            # @pt R1mat
+         end
       else
-         println("⋆ ⋆ ⋆ ⋆ ⋆ ⋆ ⋆ ⋆ ⋆ ⋆ ⋆ ⋆ ⋆ ⋆ ")
-         println("η*Id is R's right eigenvector!")
-         @pt R1mat
+         torf = false
+         if showQ
+            println("⋆ ⋆ ⋆ ⋆ ⋆ ⋆ ⋆ ⋆ ⋆ ⋆ ⋆ ⋆ ⋆ ⋆ ")
+            println("Id is R's right eigenvector!")
+            # @pt R1mat
+         end
       end
-     end
   
      #=
      construct L matrix
@@ -58,22 +68,30 @@ function canonQ(Γ, λ, α, β; showQ = false)
      L1 = L * delta(α, α')
      L1mat = array(L1, β, β')
      L1mat0 = Diagonal([L1mat[1,1] for _ in 1:size(L1mat)[1]])
-     if showQ
+
       if norm(L1mat - L1mat0) > ε
-         println("-------------------------------")
-         println("η*Id is NOT L's left eigenvector!")
-         @pt L1mat
+         torf = false
+         if showQ
+            println("-------------------------------")
+            println("Id is NOT L's left eigenvector!")
+            # @pt L1mat
+         end
       else
-         println("⋆ ⋆ ⋆ ⋆ ⋆ ⋆ ⋆ ⋆ ⋆ ⋆ ⋆ ⋆ ⋆ ⋆ ")
-         println("η*Id is L's left eigenvector!")
-         @pt L1mat
+         torf = false
+         if showQ
+            println("⋆ ⋆ ⋆ ⋆ ⋆ ⋆ ⋆ ⋆ ⋆ ⋆ ⋆ ⋆ ⋆ ⋆ ")
+            println("Id is L's left eigenvector!")
+            # @pt L1mat
+         end
       end
-    end
-  
-     return R, L
+
+     return R, L, torf
 end
 
-function make_canon(Γ, λ, R, L, α, β; maxdim)
+function make_canon(Γ, λ, R, L; maxdim, cutoff)
+
+   α = commonind(Γ, Γ, tags="left, bond")
+   β = commonind(Γ, Γ, tags="right, bond")
     ## ====================
     ## step 1: find X and Y
     ## ====================
@@ -98,7 +116,6 @@ function make_canon(Γ, λ, R, L, α, β; maxdim)
     comidx = commonind(W, D)   # comidx
                                # W: β', comidx
     uniqidxX = uniqueind(D, W) # D: comidx, uniqidxX
-    Wl = replaceinds(W, [β', comidx], [β, uniqidxX])
     Dmat = array(D, comidx, uniqidxX)
     sqrtD = ITensor(sqrt(Dmat), comidx, uniqidxX) # sqrtD: comidx, uniqidxX
     # X = W * √D
@@ -123,7 +140,7 @@ function make_canon(Γ, λ, R, L, α, β; maxdim)
  
     #### then do the decomposition
     # Vₗ * W = W * D
-    D, W = eigen(Vₗ, α, α')
+    D, W = eigen(Vₗ, α, α', ishermitian=true)
     comidx = commonind(W, D)   # comidx
                                # W: α', comidx
     uniqidxY = uniqueind(D, W) # D: comidx, uniqidxY
@@ -139,26 +156,34 @@ function make_canon(Γ, λ, R, L, α, β; maxdim)
     ## step 2: SVD => transpose(Y)λX = Uλ'V
     ## ====================================
     YtλX = replaceind(Y, α', α) * λ * X # YtλX: uniqidxY, uniqidxX
-    U, S, V = svd(YtλX, uniqidxY; maxdim=maxdim)
+    U, S, V = svd(YtλX, uniqidxY; maxdim=maxdim, cutoff=cutoff)
     jwchk(norm(U * S * V - YtλX) < 1e-8 * norm(YtλX))
     αp = commonind(U, S) # U: uniqidxY, αp
     βp = commonind(V, S) # V: βp, uniqidxX
-    λ = replaceinds(S, [αp, βp], [α, β])
+   #  λ = replaceinds(S, [αp, βp], [α, β])
+   settags!(λ, "left, bond", αp)
+   settags!(λ, "right, bond", βp)
  
     ## ======================================
     ## step 3: construct Γ': V invX Γ invYt U
     ## ======================================
     ### be very careful with the ordering of indices!!!
+   #  @infiltrate
     Xinv = ITensor(inv(array(X, β, uniqidxX)), uniqidxX, α)
     Ytinv = ITensor(inv(array(Y, uniqidxY, α)), β, uniqidxY)
     Γ = V * Xinv * Γ * Ytinv * U
     ### be very careful with the ordering of indices!!!
-    replaceinds!(Γ, [αp, βp], [β, α])
+   #  replaceinds!(Γ, [αp, βp], [β, α])
+   settags!(Γ, "right, bond", αp)
+   settags!(Γ, "left, bond", βp)
  
     return Γ, λ
- end
+end
 
- function make_canon(Γ, λ, R, L, α, β)
+function make_canon(Γ, λ, R, L)
+   α = commonind(Γ, Γ, tags="left, bond")
+   β = commonind(Γ, Γ, tags="right, bond")
+
    ## ====================
    ## step 1: find X and Y
    ## ====================

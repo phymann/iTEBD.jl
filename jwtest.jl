@@ -1,5 +1,9 @@
-function tf(x; m)
-  return x^m
+function f1(x)
+  return x, x^2
 end
 
-tf(2; m = 3)
+function f2(x)
+  return f1(x)
+end
+
+f2(3)

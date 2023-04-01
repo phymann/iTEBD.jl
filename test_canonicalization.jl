@@ -195,6 +195,15 @@ function make_canon(Γ, λ, R, L, α, β)
    return Γ, λ
 end
 
+function normalizeiMPS(Γ, λ, μ, ν)
+   it1 = ITensor(1.)
+   it1 *= prime(λ, ν) * prime(Γ, "bond") * prime(λ, μ)
+   nrm = scalar(it1 * dag(it1))
+   Γ /= (nrm^(1/6))
+   λ /= nrm^(1/6)
+   return Γ, λ
+ end
+
 let
    println("-----------------------------------------------------------------")
    println("random iMPS")
@@ -225,11 +234,15 @@ let
    R, L = canonQ(Γ, λ, α, β; showQ = true)
    Γ, λ = make_canon(Γ, λ, R, L, α, β)
 
+   Γ, λ = normalizeiMPS(Γ, λ, α, β)
+
    # ---------------------------------------------
    # check canonicalization, again
    println("-----------------------------------------------------------------")
    println("After canonicalization process")
    R, L = canonQ(Γ, λ, α, β; showQ = true)
+
+
 
    return nothing
 end

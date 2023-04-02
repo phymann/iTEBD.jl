@@ -17,6 +17,25 @@ function jwstop()
  
  function jwchk(x::Bool)
     if !x
-        error("sanity check failed")
+        error("\n
+        ================================
+        sanity check failed
+        ================================\n")
     end
+ end
+
+ function getmaxelm(Γ::ITensor)
+   max1 = maximum(abs.(array(Γ)))
+  #  println("maximal absolute matrix element is $(max1)")
+   return max1
+ end
+ function getmaxelm(Γ::Matrix)
+   max1 = maximum(abs.(Γ))
+  #  println("maximal absolute matrix element is $(max1)")
+   return max1
+ end
+ function getmaxelm(Γ::Array)
+   max1 = maximum(abs.(Γ))
+  #  println("maximal absolute matrix element is $(max1)")
+   return max1
  end

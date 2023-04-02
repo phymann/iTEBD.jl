@@ -3,33 +3,44 @@ using ITensors
 using PrettyTables
 using KrylovKit
 using Infiltrator
+using Dates
+
+println("-----------------------------------------")
+println(Dates.now())
+println("-----------------------------------------")
 
 include("canonical.jl")
 include("miscellaneous.jl")
-
+include("iMPS_functions.jl")
 
 """
 To update Γ and λ
 """
 function updateit(Γ, λ, a)
-
   μ = commonind(Γ, Γ, tags="left, bond")
   ν = commonind(Γ, Γ, tags="right, bond")
   j = commonind(a, a, tags="left, site")
   l = commonind(a, a, tags="right, site")
+  i = commonind(a, a, tags="up, site")
+  k = commonind(a, a, tags="down, site")
 
+  if !hasind(Γ, i)
+    @show inds(Γ)
+    @show i
+    @error("index of Γ is wrong !!!")
+  end
   it = ITensor(1.)
   #=
   --------------------------------------------------
-  μ-[λΓλ]-ν
+  μ-[Γ]-ν
     |
-    k
+    i
   =#
-  it *= replaceind(λ, ν, μ') * prime(Γ, "bond") * replaceind(λ, μ, ν')
+  it *= Γ
 
   #=
   --------------------------------------------------
-  μ-[λΓλ]-ν
+  μ-[Γ]-ν
     |
   j-[a]-l
     |
@@ -39,8 +50,8 @@ function updateit(Γ, λ, a)
 
   #=
   --------------------------------------------------
-  μ-[λΓλ]-ν
-  [ a ]-l
+  μ-[Γ]-ν
+   [a]-l
     |
     k
   =#
@@ -55,8 +66,8 @@ function updateit(Γ, λ, a)
 
   #=
   --------------------------------------------------
-  μ-[λΓλ]-ν
-  [ a ]
+  μ-[Γ]-ν
+   [a]
     |
     k
   =#
@@ -70,21 +81,15 @@ function updateit(Γ, λ, a)
 
   #=
   --------------------------------------------------
-  μ-[λΓλ]-ν
-  [ a ]
+  μ-[Γ]-ν
+   [a]
     |
     i
   =#
-  replacetags(it, "down, site", "up, site")
-
-  # Γ, λ = normalizeiMPS(Γ, λ, μ, ν)
-
+  replaceind!(it, k, i)
   return it, λ
 end
 
-"""
-
-"""
 function getZ(Γ, λ, a)
   μ = commonind(Γ, Γ, tags="left, bond")
   ν = commonind(Γ, Γ, tags="right, bond")
@@ -98,24 +103,6 @@ function getZ(Γ, λ, a)
   vals, _, _, = eigsolve(x -> array(((ITensor(x, ν, l, ν') * it1) * a) * it2, μ, j, μ'), rand(dim(ν), dim(l), dim(ν')))
   return vals[1]
 end
-
-
-"""
-find norm of iMPS
-"""
-function normalizeiMPS(Γ, λ)
-  μ = commonind(Γ, Γ, tags="left, bond")
-  ν = commonind(Γ, Γ, tags="right, bond")
-  it1 = ITensor(1.)
-  it1 *= prime(λ, ν) * prime(Γ, "bond") * prime(λ, μ)
-  nrm = scalar(it1 * dag(it1))
-  Γ /= nrm^(1/6)
-  λ /= nrm^(1/6)
-  return Γ, λ
-end
-
-
-
 
 #=
     two-dimensional Ising model
@@ -153,7 +140,7 @@ end
 =#
 
 let
-  β = 0.1
+  β = 1
   J = 1
 
   d = 2
@@ -162,9 +149,11 @@ let
   k = Index(d, "down, site")
   l = Index(d, "right, site")
 
-  χ = 5
+  χ = 10
   μ = Index(χ, "left, bond")
   ν = Index(χ, "right, bond")
+
+  dmax = 50
 
   #=
       μ-[Γ]-ν
@@ -172,17 +161,15 @@ let
           i
   =#
   Γ = randomITensor(Float64, μ, i, ν)
-  # ones()
-  # Γ = ITensor()
+
   #=
         μ-[λ]-ν
   =#
+  λ = diagITensor(diag(array(randomITensor(Float64, μ, ν))), μ, ν)
 
-  # λ = diagITensor(diag(array(randomITensor(Float64, μ, ν))), μ, ν)
-  λ = ITensor(Diagonal(ones(χ)), μ, ν)
-  R, L = canonQ(Γ, λ; showQ = true)
+  R, L = canonQ(Γ, λ; showQ = false)
   Γ, λ = make_canon(Γ, λ, R, L)
-  Γ, λ = normalizeiMPS(Γ, λ)
+  println("check CANON after normalization")
   canonQ(Γ, λ; showQ = true)
 
   Qmat = [ exp(-β * (-J)) exp(β * J); 
@@ -209,25 +196,52 @@ let
     @show counti
     Γold = Γ
     λold = λ
+    # -----------------------
+    # update
     Γ, λ = updateit(Γold, λold, a)
-    R, L, torf = canonQ(Γ, λ; showQ = true)
-    if ~torf
-      println("update to a non-canonical iMPS")
+    if getmaxelm(Γ)>1e8
+      println("Γ, λ = updateit(Γold, λold, a)")
+      @warn("Γ too large: $(getmaxelm(Γ))")
     end
-    Γ, λ = make_canon(Γ, λ, R, L; maxdim = χ, cutoff = 1e-2)
 
+    # -----------------------
+    # canonicalize
+    R, L = canonQ(Γ, λ; showQ=false)
+    Γ, λ = make_canon(Γ, λ, R, L; maxdim = dmax, ishermitian = true, checkQ = true)
+    if getmaxelm(Γ)>1e8
+      # println("Γ, λ = make_canon(Γ, λ, R, L; maxdim = dmax, ishermitian = true, checkQ = true)")
+      println("Γ, λ = make_canon(Γ, λ, R, L)")
+      @warn("Γ too large: $(getmaxelm(Γ))")
+    end
 
-    # Γ, λ = normalizeiMPS(Γ, λ, μ, ν)
-    @show norm(λ)
-    @show norm(λold)
-    cond = norm(λ - λold)/norm(λ)
-    @show cond
-    if cond < 1e-3
-      break
+    println("check CANON after normalization")
+    _, _, canonQ1 = canonQ(Γ, λ; showQ = true)
+    cntcanon = 0
+    while !canonQ1
+      cntcanon += 1
+      println("check CANON after normalization -> returns false!!! for cntcanon = $cntcanon")
+      R, L = canonQ(Γ, λ; showQ=false)
+      Γ, λ = make_canon(Γ, λ, R, L; maxdim = dmax, ishermitian = true, checkQ = true)
+      if getmaxelm(Γ)>1e8
+        # println("Γ, λ = make_canon(Γ, λ, R, L; maxdim = dmax, ishermitian = true, checkQ = true)")
+        println("Γ, λ = make_canon(Γ, λ, R, L)")
+        @warn("Γ too large: $(getmaxelm(Γ))")
+      end
+      _, _, canonQ1 = canonQ(Γ, λ; showQ = true)
+      if cntcanon == 42
+        @error("can not canonicalize even after 42 tiems")
+      end
+    end
+      
+
+    if size(λ) == size(λold)
+      cond = norm(matrix(λ) - matrix(λold))
+      @show cond
+      if cond < 1e-3
+        break
+      end
     end
   end
-
-  Γ, λ = normalizeiMPS(Γ, λ)
 
   return getZ(Γ, λ, a)
 end

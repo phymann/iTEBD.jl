@@ -1,41 +1,29 @@
-function jwstop()
-    println("---------------------------")
-    println("---------------------------")
-    println("---------------------------")
-    println("--------No Problem!--------")
-    println("---------------------------")
-    println("---------------------------")
-    println("---------------------------")
-    error("stop here")
- end
- 
- function jwdisplay(x,str)
+function jwdisplay(x,str)
     println("---------------------------")
     println("$str is ")
     display(x)
- end
- 
- function jwchk(x::Bool)
+end
+
+function jwchk(x::Bool)
     if !x
         error("\n
         ================================
         sanity check failed
         ================================\n")
     end
- end
+end
 
- function getmaxelm(Γ::ITensor)
-   max1 = maximum(abs.(array(Γ)))
-  #  println("maximal absolute matrix element is $(max1)")
-   return max1
- end
- function getmaxelm(Γ::Matrix)
-   max1 = maximum(abs.(Γ))
-  #  println("maximal absolute matrix element is $(max1)")
-   return max1
- end
- function getmaxelm(Γ::Array)
-   max1 = maximum(abs.(Γ))
-  #  println("maximal absolute matrix element is $(max1)")
-   return max1
- end
+function ising_free_energy(β::Real, J::Real=1.0)
+    k = β * J
+    c = cosh(2 * k)
+    s = sinh(2 * k)
+    xmin = 0.0
+    xmax = π
+    integrand(x) = log(c^2 + √(s^4 + 1 - 2 * s^2 * cos(2x)))
+    integral, err = quadgk(integrand, xmin, xmax)::Tuple{Float64,Float64}
+    return -(log(2) + integral / π) / (2 * β)
+end
+
+function getmaxelm(mat)
+    return maximum(abs.(mat))
+end

@@ -1,4 +1,4 @@
-function canonQ(Γ, λ; showQ = false, checkQ = false)
+function canonQ(Γ, λ; showQ = false)
     # parameters
     ε = 1E-3
 
@@ -102,11 +102,8 @@ function repeatedlyFind(vmat, R, α, β)
 end
 
 function make_canon(Γ, λ, R, L; kwargs...)
-    if haskey(kwargs, :cutoffcheck)
-        cutoffcheck = kwargs[:cutoffcheck]
-    else
-        cutoffcheck = 1e-3
-    end
+    cutoffcheck = get(kwargs, :cutoffcheck, 1e-3)
+    showQ = get(kwargs, :showQ, true)
 
     # setup indices
     α = commonind(Γ, Γ, tags="left, bond")
@@ -258,6 +255,8 @@ function make_canon(Γ, λ, R, L; kwargs...)
     replaceinds!(Γ, [αp, βp], [βp1, αp1])
 
     Γ, λ = normalizeiMPS(Γ, λ, η)
-    println("bond dimension =  $(size(λ)[1])")
+    if showQ
+        println("bond dimension =  $(size(λ)[1])")
+    end
     return Γ, λ
 end

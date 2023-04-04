@@ -1,7 +1,7 @@
 """
     initialize iMPS and a tensors
 """
-function setupTs(β, J, methodi)
+function setupTs(β, J, h, methodi)
     d = 2
     i = Index(d, "up, site")
     j = Index(d, "left, site")
@@ -26,7 +26,7 @@ function setupTs(β, J, methodi)
 
     # make the initial random iMPS canonical
     R, L = canonQ(Γ, λ)
-    Γ, λ = make_canon(Γ, λ, R, L)
+    Γ, λ = make_canon(Γ, λ, R, L; showQ = false)
 
     Qmat = [
         exp(-β * (-J-2h)) exp(-β * J);
@@ -177,6 +177,7 @@ function iTEBDmain(β::Float64, J::Float64, h::Float64; kwargs...)
     nrepeat = get(kwargs, :nrepeat, 420)
     cutoffcheck = get(kwargs, :cutoffcheck, 1e-2)
     methodi = get(kwargs, :methodi, 2)
+    showQ = get(kwargs, :showQ, true)
     ## method for obtain a tensor
     #=
         1: simply W = √Q, W W = Q
@@ -185,12 +186,14 @@ function iTEBDmain(β::Float64, J::Float64, h::Float64; kwargs...)
 
     # prepare tensors
     # ---------------------------------------
-    Γ, λ, a = setupTs(β, J, methodi)
+    Γ, λ, a = setupTs(β, J, h, methodi)
 
     # update tensors
     # ---------------------------------------
     for counti in 1:nrepeat
-        @show counti
+        if showQ
+            @show counti
+        end
         Γold = Γ
         λold = λ
 
@@ -201,19 +204,27 @@ function iTEBDmain(β::Float64, J::Float64, h::Float64; kwargs...)
         maxdim = maxdim,
         ishermitian = true,
         cutoffcheck = cutoffcheck,
-        cutoff = cutoff)
+        cutoff = cutoff,
+        showQ = showQ)
 
-        if size(λ) == size(λold)
+        if size(λ) == size(λold) && counti > 7
             cond = norm(matrix(λ) - matrix(λold))
-            println("convergence criterion = $cond")
+            if showQ
+                println("convergence criterion = $cond")
+            end
             if cond < cutoff
+                println("For (β, h) = ($β, $h), converged at $counti")
                 break
             end
         end
     end
+    if imag(getZ(Γ, λ, a)) > 1e-6
+        println("Z is complex !!??")
+    else
+        FE = -log(real(getZ(Γ, λ, a)))/β
+    end
 
     if abs(h) < 1e-5
-        FE = -log(getZ(Γ, λ, a))/β
         FEe = ising_free_energy(β, J)
         println("------------------------------")
         println("relative free energy diff:")

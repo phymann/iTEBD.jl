@@ -39,7 +39,7 @@ contourf(xmq,ymq,zmq,256,'LineStyle','none')
 
 hold on
 
-plot(lsh,lsmax,'.','Color','w')
+plot(lsh,lsmax,'.','Color','k')
 
 ax = gca;
 
@@ -70,3 +70,5 @@ for i = 1:size(zmq,2)
 end
 % hold on
 % plot(lshmax,y,'*','Color','b')
+
+clim([0, 1])

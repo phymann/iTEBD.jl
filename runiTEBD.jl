@@ -18,8 +18,8 @@ println(Dates.now())
 
 J = 1.0
 
-lsβ = 0.2:0.01:0.6
-lsh = -0.5:0.01:0.5
+lsβ = 0.2:0.005:βc
+lsh = -0.5:0.005:0.5
 
 matfe = zeros(length(lsβ), length(lsh))
 

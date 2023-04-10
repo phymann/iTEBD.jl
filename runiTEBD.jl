@@ -10,7 +10,7 @@ const βc = 0.5 * log(√2 + 1)
 include("canonical.jl")
 include("miscellaneous.jl")
 include("iMPS_functions.jl")
-include("iTEBDmain.jl")
+include("mainiTEBD.jl")
 
 println("-----------------------------------------")
 println(Dates.now())
@@ -25,7 +25,7 @@ matfe = zeros(length(lsβ), length(lsh))
 
 for (idxβ, β) in enumerate(lsβ)
     for (idxh, h) in enumerate(lsh)
-        matfe[idxβ, idxh] = iTEBDmain(β, J, h; showQ = false)
+        matfe[idxβ, idxh] = mainiTEBD(β, J, h; showQ = false)
     end
 end
 

@@ -1,6 +1,8 @@
 addpath('~/jwplot/common')
 
-load1 = load('../matfile.mat');
+load1 = load('../D20230410T194824.mat');
+
+tc = (0.5*log(sqrt(2)+1))^-1;
 
 matf = load1.matfe;
 lsb = load1.lsb;
@@ -70,7 +72,8 @@ for i = 1:size(zmq,1)
     lstmax(i) = y_sp(idx);
 end
 hold on
-plot(x(1:3:end),lstmax(1:3:end),'.','Color','w')
+% plot(x(1:3:end),lstmax(1:3:end),'o','Color','w')
+plot(x,lstmax,'o','Color','k')
 
 % find local maximal for fixed beta
 nspx = numel(x);
@@ -85,5 +88,8 @@ plot(lshmax,y,'*','Color','g')
 
 text(-0.48, 2.5, 'max for fixed \beta', 'Color', 'g', 'FontSize', 15)
 text(-0.48, 2.8, 'max for fixed h', 'Color', 'w', 'FontSize', 15)
+
+figure
+plot(x,lstmax/tc,'o')
 
 % clim([0, 1])

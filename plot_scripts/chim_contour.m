@@ -83,5 +83,7 @@ end
 hold on
 plot(lshmax,y,'*','Color','g')
 
-text(-0.1, 4.5, 'maximal for fixed \beta', 'Color', 'g', 'FontSize', 15)
-text(-0.44, 4.2, 'maximal for fixed h', 'Color', 'w', 'FontSize', 15)
+text(-0.48, 2.5, 'max for fixed \beta', 'Color', 'g', 'FontSize', 15)
+text(-0.48, 2.8, 'max for fixed h', 'Color', 'w', 'FontSize', 15)
+
+clim([0,100])

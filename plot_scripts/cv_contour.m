@@ -15,7 +15,8 @@ for hi = 1:numel(lsh)
     
     [lst, z1] = calCv_fe2S2Cv(lsb,fe,1);
 
-    lst_sp = linspace(lst(1),lst(end),3*numel(lst));
+    nsp = numel(lst);
+    lst_sp = linspace(lst(1), lst(end), nsp);
     z1_sp = interp1(lst,z1,lst_sp,'spline');
     [~,idx] = max(z1_sp);
     lsmax(hi) = lst_sp(idx);
@@ -39,7 +40,7 @@ contourf(xmq,ymq,zmq,256,'LineStyle','none')
 
 hold on
 
-plot(lsh,lsmax,'.','Color','k')
+% plot(lsh,lsmax,'.','Color','k')
 
 ax = gca;
 
@@ -59,16 +60,30 @@ xlabel('$h/J$','Interpreter','latex')
 ylabel('$T/J$','Interpreter','latex')
 
 ax.FontSize = 16;
+% find local maximal for fixed h
+nspy = numel(y);
+y_sp = linspace(y(1), y(end), nspy);
+lstmax = x;
+for i = 1:size(zmq,1)
+    z_sp = interp1(y,zm(i,:),y_sp,'spline');
+    [~,idx] = max(z_sp);
+    lstmax(i) = y_sp(idx);
+end
+hold on
+plot(x(1:3:end),lstmax(1:3:end),'.','Color','w')
 
 % find local maximal for fixed beta
-x_sp = linspace(x(1),x(end),2*numel(x));
+nspx = numel(x);
+x_sp = linspace(x(1), x(end), nspx);
 lshmax = y;
 for i = 1:size(zmq,2)
     z_sp = interp1(x,zm(:,i),x_sp,'spline');
     [~,idx] = max(z_sp);
     lshmax(i) = x_sp(idx);
 end
-% hold on
-% plot(lshmax,y,'*','Color','b')
+plot(lshmax,y,'*','Color','g')
 
-clim([0, 1])
+text(-0.48, 2.5, 'max for fixed \beta', 'Color', 'g', 'FontSize', 15)
+text(-0.48, 2.8, 'max for fixed h', 'Color', 'w', 'FontSize', 15)
+
+% clim([0, 1])

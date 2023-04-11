@@ -35,7 +35,7 @@ include("mainiTEBD.jl")
 
     for (idxβ, β) in enumerate(lsβ)
         for (idxh, h) in enumerate(lsh)
-            matfe[idxβ, idxh], convergenceQ = iTEBDmain(β, J, h; showQ=false, nrepeat=1024)
+            matfe[idxβ, idxh], convergenceQ = mainiTEBD(β, J, h; showQ=false, nrepeat=1024)
             if !convergenceQ
                 n_notconv += 1
                 append!(hls_notconv, h)

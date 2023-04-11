@@ -9,15 +9,16 @@ using PrettyTables
 
 const βc = 0.5 * log(√2 + 1)
 
+timeStamp = Dates.format(now(), "DyyyymmddTHHMMSS")
+
 dt = @elapsed let
-include("canonical.jl")
-include("miscellaneous.jl")
-include("iMPS_functions.jl")
-include("mainiTEBD.jl")
+    include("canonical.jl")
+    include("miscellaneous.jl")
+    include("iMPS_functions.jl")
+    include("mainiTEBD.jl")
 
     println("-----------------------------------------")
     println(Dates.now())
-    timeStamp = Dates.format(now(), "DyyyymmddTHHMMSS")
 
     J = 1.0
 
@@ -44,6 +45,15 @@ include("mainiTEBD.jl")
         end
     end
 
+    file = matopen(timeStamp*".mat", "w")
+    write(file, "matfe", matfe)
+    write(file, "lsb", collect(lsβ))
+    write(file, "lsh", collect(lsh))
+    write(file, "n_notconv", n_notconv)
+    write(file, "hls_notconv", hls_notconv)
+    write(file, "bls_notconv", βls_notconv)
+    close(file)
+
     println("------------------------------")
     println("# of cases without convergence = $n_notconv")
     println("------------------------------")
@@ -53,11 +63,5 @@ include("mainiTEBD.jl")
 end
 
 file = matopen(timeStamp*".mat", "w")
-write(file, "matfe", matfe)
-write(file, "lsb", collect(lsβ))
-write(file, "lsh", collect(lsh))
-write(file, "n_notconv", n_notconv)
-write(file, "hls_notconv", hls_notconv)
-write(file, "bls_notconv", βls_notconv)
 write(file, "dt", dt)
 close(file)

@@ -2,7 +2,8 @@ logornot = 2;
 
 addpath('~/jwplot/common/')
 
-load1 = load('../matfile.mat');
+% load1 = load('../matfile.mat');
+load1 = load('../D20230411T102558.mat');
 
 matf = load1.matfe;
 lsb = load1.lsb;

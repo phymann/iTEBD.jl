@@ -1,7 +1,7 @@
 """
     initialize iMPS and a tensors
 """
-function setupTs(β, J, h, methodi)
+function setupTs(β, J, h, methodi=2)
     d = 2
     i = Index(d, "up, site")
     j = Index(d, "left, site")
@@ -34,6 +34,8 @@ function setupTs(β, J, h, methodi)
     ]
 
     if methodi == 1
+        # this method could be suboptimal
+        # since √Qmat may become a complex matrix which is not necessary
         sqrtQmat = √Qmat
         Qi = ITensor(sqrtQmat, i', i)
         Qj = ITensor(sqrtQmat, j', j)
@@ -171,6 +173,7 @@ end
     main function for iTEBD
 """
 function iTEBDmain(β::Float64, J::Float64, h::Float64; kwargs...)
+    convergenceQ = true
     # algorithm parameters
     maxdim = get(kwargs, :maxdim, 16)
     cutoff = get(kwargs, :cutoff, 1e-8)
@@ -217,7 +220,11 @@ function iTEBDmain(β::Float64, J::Float64, h::Float64; kwargs...)
                 break
             end
         end
+        if counti == nrepeat
+            convergenceQ = false
+        end
     end
+
     if imag(getZ(Γ, λ, a)) > 1e-6
         println("Z is complex !!??")
     else
@@ -230,5 +237,5 @@ function iTEBDmain(β::Float64, J::Float64, h::Float64; kwargs...)
         println("relative free energy diff:")
         println("$(abs((FE - FEe)/FEe))")
     end
-    return FE
+    return FE, convergenceQ
 end

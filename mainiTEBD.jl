@@ -172,7 +172,7 @@ end
 """
     main function for iTEBD
 """
-function iTEBDmain(β::Float64, J::Float64, h::Float64; kwargs...)
+function mainiTEBD(β::Float64, J::Float64, h::Float64; kwargs...)
     convergenceQ = true
     # algorithm parameters
     maxdim = get(kwargs, :maxdim, 16)

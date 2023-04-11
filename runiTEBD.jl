@@ -10,10 +10,10 @@ using PrettyTables
 const βc = 0.5 * log(√2 + 1)
 
 @time let
-    include("canonical.jl")
-    include("miscellaneous.jl")
-    include("iMPS_functions.jl")
-    include("iTEBDmain.jl")
+include("canonical.jl")
+include("miscellaneous.jl")
+include("iMPS_functions.jl")
+include("mainiTEBD.jl")
 
     println("-----------------------------------------")
     println(Dates.now())

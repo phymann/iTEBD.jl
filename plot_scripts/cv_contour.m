@@ -1,10 +1,15 @@
 addpath('~/jwplot/common')
 
-load1 = load('../D20230410T194824.mat');
+% load1 = load('../D20230410T194824.mat');
+% load2 = load('../D20230410T222910.mat');
+load1 = load('../D20230411T102558.mat');
+
+
 
 tc = (0.5*log(sqrt(2)+1))^-1;
 
 matf = load1.matfe;
+% matf(:,1) = reshape(load2.matfe,[],1);
 lsb = load1.lsb;
 lsh = load1.lsh;
 

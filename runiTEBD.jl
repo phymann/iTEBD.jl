@@ -22,11 +22,11 @@ dt = @elapsed let
 
     J = 1.0
 
-    nβ = 16
-    nh = 128
+    nβ =128
+    nh = 16
 
-    lsβ = range(.9*βc, βc, length=nβ)
-    lsh = range(0, 0.01, length=nh)
+    lsβ = range(.8*βc, βc, length=nβ)
+    lsh = range(0, 0.05, length=nh)
 
     matfe = zeros(nβ, nh)
 
@@ -62,6 +62,6 @@ dt = @elapsed let
     @pt βls_notconv
 end
 
-file = matopen(timeStamp*".mat", "w")
+file = matopen(timeStamp*".mat", "r+")
 write(file, "dt", dt)
 close(file)

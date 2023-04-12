@@ -1,4 +1,5 @@
 *.mat
+*.o
 ppts/
 jwtest.m
 .DS_Store

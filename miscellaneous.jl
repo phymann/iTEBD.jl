@@ -27,3 +27,8 @@ end
 function getmaxelm(mat)
     return maximum(abs.(mat))
 end
+
+"""
+    to calculate χ
+"""
+function get5h(h)
